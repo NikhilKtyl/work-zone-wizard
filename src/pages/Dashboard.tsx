@@ -297,7 +297,7 @@ const Dashboard = () => {
           </button>
 
           <button
-            onClick={() => handleNavClick("emergency")}
+            onClick={() => navigate("/emergency")}
             className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
               activeNav === "emergency"
                 ? "text-destructive bg-destructive/10"
