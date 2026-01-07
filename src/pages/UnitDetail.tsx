@@ -4,7 +4,7 @@ import {
   ArrowLeft, MapPin, Camera, Navigation, Layers, 
   Play, CheckCircle2, Clock, Edit3, AlertTriangle,
   Crosshair, Hash, Image, Plus, X, ChevronRight,
-  Timer, User, Calendar, FileText, Send
+  Timer, User, Calendar, FileText, Send, CloudOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useOffline, useCachedData } from "@/hooks/useOffline";
+import SyncStatus from "@/components/SyncStatus";
 
 // Mock data - would come from API
 const mockUnits: Record<string, {
@@ -153,6 +155,7 @@ const mockUnits: Record<string, {
 const UnitDetail = () => {
   const navigate = useNavigate();
   const { unitId } = useParams<{ unitId: string }>();
+  const { isOnline, addToSyncQueue, pendingCount } = useOffline();
   
   const [unit, setUnit] = useState(() => unitId ? mockUnits[unitId] : null);
   const [showChangeRequest, setShowChangeRequest] = useState(false);
@@ -215,12 +218,20 @@ const UnitDetail = () => {
 
   const handleStartWork = () => {
     const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    setUnit({
+    const updatedUnit = {
       ...unit,
       status: "in_progress",
       timeIn: now,
-    });
-    toast.success("Work started!", { description: `Time in: ${now}` });
+    };
+    setUnit(updatedUnit);
+    
+    // Queue for sync if offline
+    if (!isOnline) {
+      addToSyncQueue('unit_update', { unitId: unit.id, action: 'start_work', timeIn: now });
+      toast.success("Work started!", { description: `Time in: ${now} (Saved offline)` });
+    } else {
+      toast.success("Work started!", { description: `Time in: ${now}` });
+    }
   };
 
   const handleMarkComplete = () => {
@@ -229,13 +240,21 @@ const UnitDetail = () => {
       return;
     }
     const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    setUnit({
+    const updatedUnit = {
       ...unit,
       status: "completed",
       timeOut: now,
       totalDuration: "Calculated",
-    });
-    toast.success("Unit marked as complete!", { description: `Time out: ${now}` });
+    };
+    setUnit(updatedUnit);
+    
+    // Queue for sync if offline
+    if (!isOnline) {
+      addToSyncQueue('unit_update', { unitId: unit.id, action: 'mark_complete', timeOut: now });
+      toast.success("Unit marked as complete!", { description: `Time out: ${now} (Saved offline)` });
+    } else {
+      toast.success("Unit marked as complete!", { description: `Time out: ${now}` });
+    }
   };
 
   const handleCaptureGPS = () => {
@@ -248,17 +267,25 @@ const UnitDetail = () => {
 
   const confirmGPSCapture = () => {
     const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const gpsData = {
+      lat: 37.7749 + Math.random() * 0.001,
+      lng: -122.4194 + Math.random() * 0.001,
+      accuracy: gpsAccuracy || 3.5,
+      timestamp: now,
+    };
     setUnit({
       ...unit,
-      gpsCaptured: {
-        lat: 37.7749 + Math.random() * 0.001,
-        lng: -122.4194 + Math.random() * 0.001,
-        accuracy: gpsAccuracy || 3.5,
-        timestamp: now,
-      },
+      gpsCaptured: gpsData,
     });
     setShowGPSCapture(false);
-    toast.success("GPS location captured!");
+    
+    // Queue for sync if offline
+    if (!isOnline) {
+      addToSyncQueue('gps', { unitId: unit.id, gpsData });
+      toast.success("GPS location captured!", { description: "Saved offline" });
+    } else {
+      toast.success("GPS location captured!");
+    }
   };
 
   const handleAddSequential = () => {
@@ -271,7 +298,14 @@ const UnitDetail = () => {
     });
     setSequentialValue("");
     setShowSequentialInput(false);
-    toast.success("Sequential number added!");
+    
+    // Queue for sync if offline
+    if (!isOnline) {
+      addToSyncQueue('unit_update', { unitId: unit.id, action: 'add_sequential', entry: newEntry });
+      toast.success("Sequential number added!", { description: "Saved offline" });
+    } else {
+      toast.success("Sequential number added!");
+    }
   };
 
   const handleAddPhoto = () => {
@@ -282,7 +316,14 @@ const UnitDetail = () => {
       ...unit,
       photos: [...(unit.photos || []), newPhoto],
     });
-    toast.success("Photo added!");
+    
+    // Queue for sync if offline
+    if (!isOnline) {
+      addToSyncQueue('photo', { unitId: unit.id, photo: newPhoto });
+      toast.success("Photo added!", { description: "Saved offline" });
+    } else {
+      toast.success("Photo added!");
+    }
   };
 
   const handleSubmitChangeRequest = () => {
@@ -290,7 +331,22 @@ const UnitDetail = () => {
       toast.error("Please fill all required fields");
       return;
     }
-    toast.success("Change request submitted!", { description: "FM/PC will review shortly" });
+    
+    const changeRequest = {
+      unitId: unit.id,
+      type: changeType,
+      description: changeDescription,
+      timestamp: new Date().toISOString(),
+    };
+    
+    // Queue for sync if offline
+    if (!isOnline) {
+      addToSyncQueue('change_request', changeRequest);
+      toast.success("Change request saved!", { description: "Will submit when online" });
+    } else {
+      toast.success("Change request submitted!", { description: "FM/PC will review shortly" });
+    }
+    
     setShowChangeRequest(false);
     setChangeType("");
     setChangeDescription("");
