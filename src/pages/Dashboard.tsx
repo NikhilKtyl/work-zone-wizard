@@ -1,93 +1,112 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import {
-  Leaf,
-  MapPin,
-  ClipboardList,
-  AlertTriangle,
-  ChevronRight,
-  LogOut,
-  User,
-  Clock,
-  CheckCircle2,
+import { 
+  Leaf, MapPin, List, AlertTriangle, Clock, History, User, 
+  CheckCircle2, Target, Timer
 } from "lucide-react";
+import ListView from "@/components/ListView";
+import MapView from "@/components/MapView";
 
-// Mock data for demonstration
-const mockProjects = [
+// Mock data
+const mockUser = {
+  name: "Alex",
+  role: "Foreman",
+  crew: "Crew A",
+};
+
+const mockStats = {
+  unitsAssigned: 12,
+  unitsCompleted: 5,
+  timeOnSite: "4h 32m",
+};
+
+const mockUnits = [
   {
-    id: "1",
-    name: "North Valley Farm",
-    location: "Block A-12",
+    id: "U-102",
+    type: "Bore (ft)",
+    project: "North Valley Farm",
     status: "in_progress",
-    tasksTotal: 8,
-    tasksCompleted: 3,
-    priority: "normal",
+    distance: "450 ft",
+    requiredDocs: ["gps", "photo"],
+    lat: 37.7749,
+    lng: -122.4194,
   },
   {
-    id: "2",
-    name: "Sunrise Orchards",
-    location: "Section 4",
-    status: "pending",
-    tasksTotal: 5,
-    tasksCompleted: 0,
-    priority: "high",
+    id: "U-103",
+    type: "Trench (ft)",
+    project: "North Valley Farm",
+    status: "not_started",
+    distance: "280 ft",
+    requiredDocs: ["gps", "photo", "sequential"],
+    lat: 37.7759,
+    lng: -122.4184,
   },
   {
-    id: "3",
-    name: "Green Meadows",
-    location: "Unit 7B",
-    status: "in_progress",
-    tasksTotal: 12,
-    tasksCompleted: 10,
-    priority: "normal",
+    id: "U-104",
+    type: "Bore (ft)",
+    project: "Sunrise Orchards",
+    status: "completed",
+    distance: "320 ft",
+    requiredDocs: ["gps"],
+    lat: 37.7739,
+    lng: -122.4174,
+  },
+  {
+    id: "U-105",
+    type: "Conduit (ft)",
+    project: "Sunrise Orchards",
+    status: "verified",
+    distance: "150 ft",
+    requiredDocs: ["photo"],
+    lat: 37.7729,
+    lng: -122.4164,
+  },
+  {
+    id: "U-106",
+    type: "Bore (ft)",
+    project: "Green Meadows",
+    status: "not_started",
+    distance: "520 ft",
+    requiredDocs: ["gps", "photo", "sequential"],
+    lat: 37.7769,
+    lng: -122.4204,
   },
 ];
 
-const mockUser = {
-  name: "John Martinez",
-  role: "Foreman",
-  crew: "Team Alpha",
-};
+type ViewMode = "home" | "list" | "map";
+type NavTab = "home" | "map" | "emergency" | "history" | "profile";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"projects" | "map" | "emergency">("projects");
+  const [viewMode, setViewMode] = useState<ViewMode>("home");
+  const [activeNav, setActiveNav] = useState<NavTab>("home");
+  const [mapboxToken, setMapboxToken] = useState<string>(() => {
+    return localStorage.getItem("mapbox_token") || "";
+  });
+
+  useEffect(() => {
+    if (mapboxToken) {
+      localStorage.setItem("mapbox_token", mapboxToken);
+    }
+  }, [mapboxToken]);
+
+  const handleNavClick = (tab: NavTab) => {
+    setActiveNav(tab);
+    if (tab === "home") {
+      setViewMode("home");
+    } else if (tab === "map") {
+      setViewMode("map");
+    }
+  };
 
   const handleLogout = () => {
-    navigate("/");
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "in_progress":
-        return "bg-primary/10 text-primary";
-      case "pending":
-        return "bg-warning/10 text-warning";
-      case "completed":
-        return "bg-success/10 text-success";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "in_progress":
-        return "In Progress";
-      case "pending":
-        return "Pending";
-      case "completed":
-        return "Completed";
-      default:
-        return status;
-    }
+    navigate("/auth");
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-card border-b border-border px-4 py-3 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
@@ -98,151 +117,193 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground">{mockUser.crew}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="text-right mr-2">
-              <p className="text-sm font-medium text-foreground">{mockUser.name}</p>
-              <p className="text-xs text-muted-foreground">{mockUser.role}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-            >
-              <LogOut className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+          >
+            <User className="w-5 h-5 text-muted-foreground" />
+          </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-4 pb-24">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-card rounded-xl p-3 shadow-card border border-border/50">
-            <div className="flex items-center gap-2 mb-1">
-              <ClipboardList className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Tasks</span>
+      <main className="flex-1 pb-20 overflow-auto">
+        {viewMode === "home" && (
+          <div className="px-4 py-4 animate-fade-in">
+            {/* Greeting */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-foreground">Hi, {mockUser.name}</h2>
+              <p className="text-muted-foreground">{mockUser.role} – {mockUser.crew}</p>
             </div>
-            <p className="text-xl font-bold text-foreground">25</p>
-          </div>
-          <div className="bg-card rounded-xl p-3 shadow-card border border-border/50">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="w-4 h-4 text-warning" />
-              <span className="text-xs text-muted-foreground">Pending</span>
-            </div>
-            <p className="text-xl font-bold text-foreground">12</p>
-          </div>
-          <div className="bg-card rounded-xl p-3 shadow-card border border-border/50">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="w-4 h-4 text-success" />
-              <span className="text-xs text-muted-foreground">Done</span>
-            </div>
-            <p className="text-xl font-bold text-foreground">13</p>
-          </div>
-        </div>
 
-        {/* Section Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Assigned Projects</h2>
-          <span className="text-sm text-muted-foreground">{mockProjects.length} active</span>
-        </div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="bg-card rounded-xl p-4 shadow-card border border-border/50">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                  <Target className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{mockStats.unitsAssigned}</p>
+                <p className="text-xs text-muted-foreground">Assigned</p>
+              </div>
+              <div className="bg-card rounded-xl p-4 shadow-card border border-border/50">
+                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center mb-2">
+                  <CheckCircle2 className="w-5 h-5 text-success" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{mockStats.unitsCompleted}</p>
+                <p className="text-xs text-muted-foreground">Completed</p>
+              </div>
+              <div className="bg-card rounded-xl p-4 shadow-card border border-border/50">
+                <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center mb-2">
+                  <Timer className="w-5 h-5 text-warning" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{mockStats.timeOnSite}</p>
+                <p className="text-xs text-muted-foreground">On Site</p>
+              </div>
+            </div>
 
-        {/* Project Cards */}
-        <div className="space-y-3">
-          {mockProjects.map((project, index) => (
-            <button
-              key={project.id}
-              className="w-full bg-card rounded-xl p-4 shadow-card border border-border/50 text-left hover:shadow-elevated transition-all active:scale-[0.99] animate-slide-up"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-foreground">{project.name}</h3>
-                    {project.priority === "high" && (
-                      <span className="px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive rounded-full">
-                        Priority
-                      </span>
+            {/* Main Action Tiles */}
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">My Work</h3>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <button
+                onClick={() => {
+                  setViewMode("map");
+                  setActiveNav("map");
+                }}
+                className="bg-primary rounded-2xl p-6 shadow-elevated text-left hover:bg-primary/90 active:scale-[0.98] transition-all"
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary-foreground/20 flex items-center justify-center mb-4">
+                  <MapPin className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <h4 className="text-lg font-semibold text-primary-foreground">Map View</h4>
+                <p className="text-sm text-primary-foreground/70 mt-1">See units on map</p>
+              </button>
+
+              <button
+                onClick={() => setViewMode("list")}
+                className="bg-card rounded-2xl p-6 shadow-card border border-border text-left hover:shadow-elevated active:scale-[0.98] transition-all"
+              >
+                <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
+                  <List className="w-6 h-6 text-foreground" />
+                </div>
+                <h4 className="text-lg font-semibold text-foreground">List View</h4>
+                <p className="text-sm text-muted-foreground mt-1">Browse all units</p>
+              </button>
+            </div>
+
+            {/* Recent Units Preview */}
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Recent Activity</h3>
+            <div className="space-y-2">
+              {mockUnits.slice(0, 3).map((unit) => (
+                <button
+                  key={unit.id}
+                  onClick={() => navigate(`/unit/${unit.id}`)}
+                  className="w-full bg-card rounded-xl p-3 shadow-card border border-border/50 flex items-center gap-3 hover:shadow-elevated active:scale-[0.99] transition-all"
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    unit.status === "completed" || unit.status === "verified" 
+                      ? "bg-success/10" 
+                      : unit.status === "in_progress" 
+                        ? "bg-primary/10" 
+                        : "bg-secondary"
+                  }`}>
+                    {unit.status === "completed" || unit.status === "verified" ? (
+                      <CheckCircle2 className="w-5 h-5 text-success" />
+                    ) : unit.status === "in_progress" ? (
+                      <Clock className="w-5 h-5 text-primary" />
+                    ) : (
+                      <Target className="w-5 h-5 text-muted-foreground" />
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>{project.location}</span>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium text-foreground">{unit.id} – {unit.type}</p>
+                    <p className="text-xs text-muted-foreground">{unit.project}</p>
                   </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </div>
+                  <span className="text-sm text-muted-foreground">{unit.distance}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-              <div className="flex items-center justify-between">
-                <span
-                  className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                    project.status
-                  )}`}
-                >
-                  {getStatusLabel(project.status)}
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-success rounded-full transition-all"
-                      style={{
-                        width: `${(project.tasksCompleted / project.tasksTotal) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {project.tasksCompleted}/{project.tasksTotal}
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+        {viewMode === "list" && (
+          <ListView 
+            units={mockUnits} 
+            onBack={() => setViewMode("home")} 
+            onUnitClick={(id) => navigate(`/unit/${id}`)}
+          />
+        )}
+
+        {viewMode === "map" && (
+          <MapView 
+            units={mockUnits} 
+            mapboxToken={mapboxToken}
+            onTokenChange={setMapboxToken}
+            onUnitClick={(id) => navigate(`/unit/${id}`)}
+          />
+        )}
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-2 pb-safe-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-2 py-2 pb-safe-bottom z-20">
         <div className="flex items-center justify-around max-w-md mx-auto">
           <button
-            onClick={() => setActiveTab("projects")}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
-              activeTab === "projects"
+            onClick={() => handleNavClick("home")}
+            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+              activeNav === "home"
                 ? "text-primary bg-primary/10"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <ClipboardList className="w-6 h-6" />
-            <span className="text-xs font-medium">Work List</span>
+            <Leaf className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Home</span>
           </button>
 
           <button
-            onClick={() => setActiveTab("map")}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
-              activeTab === "map"
+            onClick={() => handleNavClick("map")}
+            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+              activeNav === "map"
                 ? "text-primary bg-primary/10"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <MapPin className="w-6 h-6" />
-            <span className="text-xs font-medium">Map</span>
+            <MapPin className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Map</span>
           </button>
 
           <button
-            onClick={() => setActiveTab("emergency")}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
-              activeTab === "emergency"
+            onClick={() => handleNavClick("emergency")}
+            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+              activeNav === "emergency"
                 ? "text-destructive bg-destructive/10"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <AlertTriangle className="w-6 h-6" />
-            <span className="text-xs font-medium">Emergency</span>
+            <AlertTriangle className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Emergency</span>
           </button>
 
           <button
-            className="flex flex-col items-center gap-1 py-2 px-4 rounded-xl text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => handleNavClick("history")}
+            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+              activeNav === "history"
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            <User className="w-6 h-6" />
-            <span className="text-xs font-medium">Profile</span>
+            <History className="w-5 h-5" />
+            <span className="text-[10px] font-medium">History</span>
+          </button>
+
+          <button
+            onClick={() => handleNavClick("profile")}
+            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+              activeNav === "profile"
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <User className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Profile</span>
           </button>
         </div>
       </nav>
