@@ -18,6 +18,7 @@ import {
   Hash,
   FileText,
   AlertTriangle,
+  CloudOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useOffline } from "@/hooks/useOffline";
+import SyncStatus from "@/components/SyncStatus";
 
 // Mock data
 const mockCustomers = [
@@ -66,6 +69,7 @@ interface Photo {
 
 const EmergencyJob = () => {
   const navigate = useNavigate();
+  const { isOnline, addToSyncQueue } = useOffline();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [drawings, setDrawings] = useState<Drawing[]>([]);
@@ -152,7 +156,28 @@ const EmergencyJob = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate API call
+    
+    const emergencyJobData = {
+      customer: selectedCustomer,
+      drawings,
+      photos,
+      gpsData,
+      sequentialNumbers,
+      timestamp: new Date().toISOString(),
+    };
+    
+    if (!isOnline) {
+      // Queue for sync when offline
+      addToSyncQueue('emergency_job', emergencyJobData);
+      setIsSubmitting(false);
+      toast.success("Emergency job saved offline!", {
+        description: "Will submit when connection returns",
+      });
+      navigate("/dashboard");
+      return;
+    }
+    
+    // Simulate API call when online
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsSubmitting(false);
     toast.success("Emergency job submitted!", {
@@ -181,6 +206,7 @@ const EmergencyJob = () => {
             </div>
             <p className="text-xs text-muted-foreground">Step {currentStep} of 5</p>
           </div>
+          <SyncStatus compact />
         </div>
       </header>
 

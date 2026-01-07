@@ -6,6 +6,9 @@ import {
 } from "lucide-react";
 import ListView from "@/components/ListView";
 import MapView from "@/components/MapView";
+import OfflineIndicator from "@/components/OfflineIndicator";
+import SyncStatus from "@/components/SyncStatus";
+import { useCachedData } from "@/hooks/useOffline";
 
 // Mock data
 const mockUser = {
@@ -20,7 +23,7 @@ const mockStats = {
   timeOnSite: "4h 32m",
 };
 
-const mockUnits = [
+const initialUnits = [
   {
     id: "U-102",
     type: "Bore (ft)",
@@ -83,6 +86,9 @@ const Dashboard = () => {
   const [mapboxToken, setMapboxToken] = useState<string>(() => {
     return localStorage.getItem("mapbox_token") || "";
   });
+  
+  // Use cached data for offline support
+  const { data: mockUnits } = useCachedData('units', initialUnits);
 
   useEffect(() => {
     if (mapboxToken) {
@@ -107,6 +113,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Offline Indicator */}
+      <OfflineIndicator />
+      
       {/* Header */}
       <header className="bg-card border-b border-border px-4 py-3 sticky top-0 z-20">
         <div className="flex items-center justify-between">
@@ -120,6 +129,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <SyncStatus compact />
             <button
               onClick={() => navigate("/profile")}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
