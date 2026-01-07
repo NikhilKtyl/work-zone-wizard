@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Leaf, MapPin, List, AlertTriangle, Clock, History, User, 
-  CheckCircle2, Target, Timer
+  Leaf, MapPin, List, AlertTriangle, History, User, 
+  CheckCircle2, Target, Timer, LogOut, Clock
 } from "lucide-react";
 import ListView from "@/components/ListView";
 import MapView from "@/components/MapView";
@@ -74,7 +74,7 @@ const mockUnits = [
 ];
 
 type ViewMode = "home" | "list" | "map";
-type NavTab = "home" | "map" | "emergency" | "history" | "profile";
+type NavTab = "home" | "list" | "map" | "emergency" | "history";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -94,6 +94,8 @@ const Dashboard = () => {
     setActiveNav(tab);
     if (tab === "home") {
       setViewMode("home");
+    } else if (tab === "list") {
+      setViewMode("list");
     } else if (tab === "map") {
       setViewMode("map");
     }
@@ -117,12 +119,21 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground">{mockUser.crew}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-          >
-            <User className="w-5 h-5 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+            >
+              <User className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">{mockUser.name}</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors"
+            >
+              <LogOut className="w-4 h-4 text-destructive" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -248,7 +259,7 @@ const Dashboard = () => {
         <div className="flex items-center justify-around max-w-md mx-auto">
           <button
             onClick={() => handleNavClick("home")}
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
               activeNav === "home"
                 ? "text-primary bg-primary/10"
                 : "text-muted-foreground hover:text-foreground"
@@ -259,8 +270,20 @@ const Dashboard = () => {
           </button>
 
           <button
+            onClick={() => handleNavClick("list")}
+            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
+              activeNav === "list"
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <List className="w-5 h-5" />
+            <span className="text-[10px] font-medium">List</span>
+          </button>
+
+          <button
             onClick={() => handleNavClick("map")}
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
               activeNav === "map"
                 ? "text-primary bg-primary/10"
                 : "text-muted-foreground hover:text-foreground"
@@ -272,7 +295,7 @@ const Dashboard = () => {
 
           <button
             onClick={() => handleNavClick("emergency")}
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
               activeNav === "emergency"
                 ? "text-destructive bg-destructive/10"
                 : "text-muted-foreground hover:text-foreground"
@@ -284,7 +307,7 @@ const Dashboard = () => {
 
           <button
             onClick={() => handleNavClick("history")}
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
+            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
               activeNav === "history"
                 ? "text-primary bg-primary/10"
                 : "text-muted-foreground hover:text-foreground"
@@ -292,18 +315,6 @@ const Dashboard = () => {
           >
             <History className="w-5 h-5" />
             <span className="text-[10px] font-medium">History</span>
-          </button>
-
-          <button
-            onClick={() => handleNavClick("profile")}
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors ${
-              activeNav === "profile"
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <User className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Profile</span>
           </button>
         </div>
       </nav>
