@@ -1,11 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import { useState } from "react";
 import { 
   Locate, ZoomIn, ZoomOut, Layers, MapPin, Camera, 
-  Navigation, ChevronUp, Play, CheckCircle2, X, Settings
+  Navigation, ChevronUp, Play, CheckCircle2, X
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface Unit {
@@ -21,34 +18,28 @@ interface Unit {
 
 interface MapViewProps {
   units: Unit[];
-  mapboxToken: string;
-  onTokenChange: (token: string) => void;
+  mapboxToken?: string;
+  onTokenChange?: (token: string) => void;
   onUnitClick: (id: string) => void;
 }
 
-const MapView = ({ units, mapboxToken, onTokenChange, onUnitClick }: MapViewProps) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-  
+const MapView = ({ units, onUnitClick }: MapViewProps) => {
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [showAllUnits, setShowAllUnits] = useState(true);
-  const [showTokenInput, setShowTokenInput] = useState(!mapboxToken);
-  const [tempToken, setTempToken] = useState(mapboxToken);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "in_progress":
-        return "#3B82F6";
+        return "bg-primary border-primary";
       case "not_started":
-        return "#6B7280";
+        return "bg-muted-foreground border-muted-foreground";
       case "completed":
-        return "#22C55E";
+        return "bg-success border-success";
       case "verified":
-        return "#16A34A";
+        return "bg-success border-success";
       default:
-        return "#6B7280";
+        return "bg-muted-foreground border-muted-foreground";
     }
   };
 
@@ -80,171 +71,100 @@ const MapView = ({ units, mapboxToken, onTokenChange, onUnitClick }: MapViewProp
     }
   };
 
-  useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
-
-    mapboxgl.accessToken = mapboxToken;
-
-    try {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/light-v11",
-        center: [-122.4194, 37.7749],
-        zoom: 14,
-      });
-
-      map.current.addControl(
-        new mapboxgl.NavigationControl({ showCompass: false }),
-        "top-right"
-      );
-
-      map.current.on("load", () => {
-        setMapLoaded(true);
-        addMarkers();
-      });
-
-      return () => {
-        markersRef.current.forEach((marker) => marker.remove());
-        map.current?.remove();
-      };
-    } catch (error) {
-      console.error("Map initialization error:", error);
-      setShowTokenInput(true);
-    }
-  }, [mapboxToken]);
-
-  const addMarkers = () => {
-    if (!map.current) return;
-
-    // Clear existing markers
-    markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = [];
-
-    units.forEach((unit) => {
-      const el = document.createElement("div");
-      el.className = "unit-marker";
-      el.style.cssText = `
-        width: 32px;
-        height: 32px;
-        background: ${getStatusColor(unit.status)};
-        border: 3px solid white;
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.2s;
-      `;
-      el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
-      
-      el.addEventListener("mouseenter", () => {
-        el.style.transform = "scale(1.2)";
-      });
-      el.addEventListener("mouseleave", () => {
-        el.style.transform = "scale(1)";
-      });
-      el.addEventListener("click", () => {
-        setSelectedUnit(unit);
-        map.current?.flyTo({
-          center: [unit.lng, unit.lat],
-          zoom: 16,
-          duration: 500,
-        });
-      });
-
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([unit.lng, unit.lat])
-        .addTo(map.current!);
-
-      markersRef.current.push(marker);
-    });
-  };
-
-  const handleRecenter = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          map.current?.flyTo({
-            center: [position.coords.longitude, position.coords.latitude],
-            zoom: 15,
-            duration: 1000,
-          });
-        },
-        () => {
-          // Fallback to units center
-          if (units.length > 0) {
-            const avgLat = units.reduce((sum, u) => sum + u.lat, 0) / units.length;
-            const avgLng = units.reduce((sum, u) => sum + u.lng, 0) / units.length;
-            map.current?.flyTo({
-              center: [avgLng, avgLat],
-              zoom: 14,
-              duration: 1000,
-            });
-          }
-        }
-      );
-    }
+  // Generate positions for units on the mock map
+  const getUnitPosition = (index: number, total: number) => {
+    const positions = [
+      { top: "25%", left: "30%" },
+      { top: "35%", left: "55%" },
+      { top: "50%", left: "25%" },
+      { top: "45%", left: "70%" },
+      { top: "65%", left: "45%" },
+      { top: "30%", left: "75%" },
+      { top: "70%", left: "30%" },
+      { top: "55%", left: "60%" },
+    ];
+    return positions[index % positions.length];
   };
 
   const handleZoomIn = () => {
-    map.current?.zoomIn({ duration: 300 });
+    setZoomLevel((prev) => Math.min(prev + 0.2, 2));
   };
 
   const handleZoomOut = () => {
-    map.current?.zoomOut({ duration: 300 });
+    setZoomLevel((prev) => Math.max(prev - 0.2, 0.6));
   };
-
-  const handleSaveToken = () => {
-    if (tempToken.trim()) {
-      onTokenChange(tempToken.trim());
-      setShowTokenInput(false);
-    }
-  };
-
-  if (showTokenInput || !mapboxToken) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-4 animate-fade-in">
-        <div className="bg-card rounded-2xl p-6 shadow-elevated border border-border max-w-sm w-full">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mx-auto">
-            <MapPin className="w-6 h-6 text-primary" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground text-center mb-2">
-            Mapbox Token Required
-          </h3>
-          <p className="text-sm text-muted-foreground text-center mb-4">
-            To use the map view, please enter your Mapbox public token. Get one at{" "}
-            <a 
-              href="https://mapbox.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              mapbox.com
-            </a>
-          </p>
-          <Input
-            placeholder="pk.xxxxx..."
-            value={tempToken}
-            onChange={(e) => setTempToken(e.target.value)}
-            className="mb-4 h-12 rounded-xl"
-          />
-          <Button
-            onClick={handleSaveToken}
-            disabled={!tempToken.trim()}
-            className="w-full h-12 rounded-xl"
-          >
-            Save & Continue
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="relative flex-1 h-full animate-fade-in">
-      {/* Map Container */}
-      <div ref={mapContainer} className="absolute inset-0" />
+    <div className="relative flex-1 h-full min-h-[500px] animate-fade-in">
+      {/* Mock Map Container */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-br from-[#e8f4e8] via-[#f0f7f0] to-[#e5f0e5] overflow-hidden"
+        style={{ transform: `scale(${zoomLevel})`, transformOrigin: "center" }}
+      >
+        {/* Grid lines for map effect */}
+        <div className="absolute inset-0 opacity-20">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#94a3b8" strokeWidth="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
+
+        {/* Mock Roads */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {/* Main road */}
+          <path d="M 0 50 Q 25 45, 50 50 T 100 48" stroke="#d1d5db" strokeWidth="1.5" fill="none" />
+          <path d="M 20 0 Q 25 25, 22 50 T 25 100" stroke="#d1d5db" strokeWidth="1" fill="none" />
+          <path d="M 60 0 Q 55 30, 60 50 T 55 100" stroke="#d1d5db" strokeWidth="1" fill="none" />
+          <path d="M 0 30 Q 30 28, 50 32 T 100 30" stroke="#e5e7eb" strokeWidth="0.8" fill="none" />
+          <path d="M 0 70 Q 40 72, 60 68 T 100 72" stroke="#e5e7eb" strokeWidth="0.8" fill="none" />
+        </svg>
+
+        {/* Mock Areas/Fields */}
+        <div className="absolute top-[15%] left-[10%] w-24 h-16 bg-[#c7e2c7] rounded-lg opacity-50" />
+        <div className="absolute top-[60%] left-[60%] w-32 h-20 bg-[#c7e2c7] rounded-lg opacity-50" />
+        <div className="absolute top-[20%] left-[65%] w-20 h-24 bg-[#b8d4b8] rounded-lg opacity-40" />
+        <div className="absolute top-[50%] left-[5%] w-16 h-28 bg-[#c7e2c7] rounded-lg opacity-50" />
+
+        {/* Mock Labels */}
+        <div className="absolute top-[12%] left-[12%] text-[10px] text-muted-foreground/60 font-medium">
+          North Valley Farm
+        </div>
+        <div className="absolute top-[58%] left-[62%] text-[10px] text-muted-foreground/60 font-medium">
+          Sunrise Orchards
+        </div>
+        <div className="absolute top-[18%] left-[67%] text-[10px] text-muted-foreground/60 font-medium">
+          Green Meadows
+        </div>
+
+        {/* Unit Markers */}
+        {units.map((unit, index) => {
+          const position = getUnitPosition(index, units.length);
+          return (
+            <button
+              key={unit.id}
+              onClick={() => setSelectedUnit(unit)}
+              className={`absolute w-8 h-8 -ml-4 -mt-4 rounded-full border-[3px] border-white shadow-lg flex items-center justify-center transition-all hover:scale-125 hover:z-10 ${getStatusColor(unit.status)} ${
+                selectedUnit?.id === unit.id ? "scale-125 z-10 ring-4 ring-primary/30" : ""
+              }`}
+              style={{ top: position.top, left: position.left }}
+            >
+              <MapPin className="w-4 h-4 text-white" />
+            </button>
+          );
+        })}
+
+        {/* Current Location Indicator */}
+        <div 
+          className="absolute w-4 h-4 -ml-2 -mt-2 rounded-full bg-primary shadow-lg animate-pulse"
+          style={{ top: "48%", left: "42%" }}
+        >
+          <div className="absolute inset-0 rounded-full bg-primary/30 animate-ping" />
+        </div>
+      </div>
 
       {/* Map Controls */}
       <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none">
@@ -258,13 +178,23 @@ const MapView = ({ units, mapboxToken, onTokenChange, onUnitClick }: MapViewProp
             {showAllUnits ? "All Units" : "Nearby"}
           </button>
 
-          {/* Settings */}
-          <button
-            onClick={() => setShowTokenInput(true)}
-            className="pointer-events-auto w-10 h-10 bg-card rounded-xl shadow-elevated border border-border flex items-center justify-center"
-          >
-            <Settings className="w-4 h-4 text-muted-foreground" />
-          </button>
+          {/* Legend */}
+          <div className="pointer-events-auto bg-card rounded-xl px-3 py-2 shadow-elevated border border-border">
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-muted-foreground" />
+                <span>Not Started</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-primary" />
+                <span>In Progress</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-success" />
+                <span>Done</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -283,16 +213,22 @@ const MapView = ({ units, mapboxToken, onTokenChange, onUnitClick }: MapViewProp
           <ZoomOut className="w-5 h-5" />
         </button>
         <button
-          onClick={handleRecenter}
           className="w-12 h-12 bg-primary rounded-xl shadow-elevated flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           <Locate className="w-5 h-5" />
         </button>
       </div>
 
+      {/* Unit Count Badge */}
+      <div className="absolute bottom-4 left-4 z-10">
+        <div className="bg-card rounded-xl px-4 py-2 shadow-elevated border border-border">
+          <p className="text-sm font-medium text-foreground">{units.length} units visible</p>
+        </div>
+      </div>
+
       {/* Selected Unit Sheet */}
       {selectedUnit && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 animate-slide-up">
+        <div className="absolute bottom-0 left-0 right-0 z-20 animate-slide-up">
           <div className="bg-card rounded-t-2xl shadow-modal border-t border-border p-4">
             {/* Handle */}
             <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
@@ -328,6 +264,7 @@ const MapView = ({ units, mapboxToken, onTokenChange, onUnitClick }: MapViewProp
               </span>
 
               <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground mr-2">{selectedUnit.distance}</span>
                 {selectedUnit.requiredDocs.map((doc) => (
                   <div
                     key={doc}
