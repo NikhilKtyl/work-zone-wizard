@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import UnitDetail from "./pages/UnitDetail";
 import EmergencyJob from "./pages/EmergencyJob";
 import History from "./pages/History";
+import HistoryDetail from "./pages/HistoryDetail";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/unit/:unitId" element={<UnitDetail />} />
           <Route path="/emergency" element={<EmergencyJob />} />
           <Route path="/history" element={<History />} />
+          <Route path="/history/:historyId" element={<HistoryDetail />} />
           <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

@@ -274,6 +274,8 @@ const History = () => {
                 onClick={() => {
                   if (item.type === "unit_completed" && item.unitId.startsWith("U-")) {
                     navigate(`/unit/${item.unitId}`);
+                  } else {
+                    navigate(`/history/${item.id}`);
                   }
                 }}
                 className="w-full bg-card rounded-xl p-4 shadow-card border border-border/50 text-left hover:shadow-elevated active:scale-[0.99] transition-all"
