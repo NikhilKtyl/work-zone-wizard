@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Leaf, MapPin, List, AlertTriangle, History, User, 
+  Leaf, MapPin, Layers, AlertTriangle, History, User, 
   CheckCircle2, Target, Timer, LogOut, Clock
 } from "lucide-react";
 import ListView from "@/components/ListView";
@@ -73,8 +73,8 @@ const mockUnits = [
   },
 ];
 
-type ViewMode = "home" | "list" | "map";
-type NavTab = "home" | "list" | "map" | "emergency" | "history";
+type ViewMode = "home" | "units" | "map";
+type NavTab = "home" | "units" | "map" | "emergency" | "history";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -94,8 +94,8 @@ const Dashboard = () => {
     setActiveNav(tab);
     if (tab === "home") {
       setViewMode("home");
-    } else if (tab === "list") {
-      setViewMode("list");
+    } else if (tab === "units") {
+      setViewMode("units");
     } else if (tab === "map") {
       setViewMode("map");
     }
@@ -190,13 +190,16 @@ const Dashboard = () => {
               </button>
 
               <button
-                onClick={() => setViewMode("list")}
+                onClick={() => {
+                  setViewMode("units");
+                  setActiveNav("units");
+                }}
                 className="bg-card rounded-2xl p-6 shadow-card border border-border text-left hover:shadow-elevated active:scale-[0.98] transition-all"
               >
                 <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
-                  <List className="w-6 h-6 text-foreground" />
+                  <Layers className="w-6 h-6 text-foreground" />
                 </div>
-                <h4 className="text-lg font-semibold text-foreground">List View</h4>
+                <h4 className="text-lg font-semibold text-foreground">Unit View</h4>
                 <p className="text-sm text-muted-foreground mt-1">Browse all units</p>
               </button>
             </div>
@@ -236,7 +239,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {viewMode === "list" && (
+        {viewMode === "units" && (
           <ListView 
             units={mockUnits} 
             onBack={() => setViewMode("home")} 
@@ -270,15 +273,15 @@ const Dashboard = () => {
           </button>
 
           <button
-            onClick={() => handleNavClick("list")}
+            onClick={() => handleNavClick("units")}
             className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${
-              activeNav === "list"
+              activeNav === "units"
                 ? "text-primary bg-primary/10"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <List className="w-5 h-5" />
-            <span className="text-[10px] font-medium">List</span>
+            <Layers className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Units</span>
           </button>
 
           <button
