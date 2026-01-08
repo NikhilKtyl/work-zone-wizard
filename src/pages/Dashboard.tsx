@@ -2,20 +2,21 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Leaf, MapPin, Layers, AlertTriangle, History, User, 
-  CheckCircle2, Target, Timer, LogOut, Clock, Building2, ChevronDown
+  CheckCircle2, Target, Timer, LogOut, Clock, Building2, ChevronDown, Hammer
 } from "lucide-react";
 import ListView from "@/components/ListView";
 import MapView from "@/components/MapView";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import SyncStatus from "@/components/SyncStatus";
 import { useCachedData } from "@/hooks/useOffline";
-import { useProject } from "@/contexts/ProjectContext";
+import { useProject, Project } from "@/contexts/ProjectContext";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 // Mock data
 const mockUser = {
@@ -94,6 +95,7 @@ const Dashboard = () => {
   const [mapboxToken, setMapboxToken] = useState<string>(() => {
     return localStorage.getItem("mapbox_token") || "";
   });
+  const [projectSheetOpen, setProjectSheetOpen] = useState(false);
   
   // Use cached data for offline support
   const { data: allUnits } = useCachedData('units', initialUnits);
@@ -131,6 +133,37 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
+  const handleProjectSelect = (project: Project) => {
+    setSelectedProject(project);
+    setProjectSheetOpen(false);
+  };
+
+  const getStatusBadge = (status: Project["status"]) => {
+    switch (status) {
+      case "in_progress":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+            <Hammer className="w-3 h-3" />
+            In Progress
+          </span>
+        );
+      case "planning":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">
+            <Clock className="w-3 h-3" />
+            Planning
+          </span>
+        );
+      case "completed":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
+            <CheckCircle2 className="w-3 h-3" />
+            Completed
+          </span>
+        );
+    }
+  };
+
   if (projectLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -152,31 +185,63 @@ const Dashboard = () => {
               <Leaf className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">BerryTech</h1>
-              {/* Project Selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  <Building2 className="w-3 h-3" />
-                  <span className="max-w-[120px] truncate">{selectedProject?.name || "Select Project"}</span>
-                  <ChevronDown className="w-3 h-3" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  {projects
-                    .filter((p) => p.status !== "completed")
-                    .map((project) => (
-                      <DropdownMenuItem
-                        key={project.id}
-                        onClick={() => setSelectedProject(project)}
-                        className={selectedProject?.id === project.id ? "bg-primary/10" : ""}
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium">{project.name}</span>
-                          <span className="text-xs text-muted-foreground">{project.customer}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Project Selector - Sheet Trigger */}
+              <Sheet open={projectSheetOpen} onOpenChange={setProjectSheetOpen}>
+                <SheetTrigger asChild>
+                  <button className="flex items-center gap-2 hover:bg-secondary/50 rounded-lg px-2 py-1 -ml-2 transition-colors">
+                    <div className="text-left">
+                      <p className="text-lg font-bold text-foreground leading-tight">
+                        {selectedProject?.name || "Select Project"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedProject?.customer || "No project selected"}
+                      </p>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle className="text-xl">Switch Project</SheetTitle>
+                  </SheetHeader>
+                  <div className="space-y-3 overflow-auto pb-8">
+                    {projects
+                      .filter((p) => p.status !== "completed")
+                      .map((project) => (
+                        <button
+                          key={project.id}
+                          onClick={() => handleProjectSelect(project)}
+                          className={`w-full rounded-xl p-4 flex items-center gap-4 text-left transition-all border ${
+                            selectedProject?.id === project.id
+                              ? "bg-primary/10 border-primary"
+                              : "bg-card border-border/50 hover:border-primary/30 hover:shadow-card"
+                          }`}
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
+                            <Building2 className="w-6 h-6 text-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-foreground truncate">
+                                {project.name}
+                              </h3>
+                              {getStatusBadge(project.status)}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              {project.customer}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {project.unitCount} units assigned
+                            </p>
+                          </div>
+                          {selectedProject?.id === project.id && (
+                            <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -206,7 +271,6 @@ const Dashboard = () => {
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground">Hi, {mockUser.name}</h2>
               <p className="text-muted-foreground">{mockUser.role} – {mockUser.crew}</p>
-              <p className="text-sm text-primary font-medium mt-1">{selectedProject?.name}</p>
             </div>
 
             {/* Quick Stats */}
