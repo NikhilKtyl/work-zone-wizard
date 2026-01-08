@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Leaf, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useProject } from "@/contexts/ProjectContext";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { selectedProject } = useProject();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -22,8 +24,14 @@ const Auth = () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     if (email && password) {
-      // Mock successful login
-      navigate("/dashboard");
+      // Check if there's a stored project selection
+      if (selectedProject) {
+        // User has a valid stored project, go directly to dashboard
+        navigate("/dashboard");
+      } else {
+        // No stored project, show project selection
+        navigate("/select-project");
+      }
     } else {
       setError("Please enter your email and password");
     }

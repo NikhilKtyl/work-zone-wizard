@@ -3,8 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProjectProvider } from "@/contexts/ProjectContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ProjectSelection from "./pages/ProjectSelection";
 import Dashboard from "./pages/Dashboard";
 import UnitDetail from "./pages/UnitDetail";
 import EmergencyJob from "./pages/EmergencyJob";
@@ -18,22 +20,25 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/unit/:unitId" element={<UnitDetail />} />
-          <Route path="/emergency" element={<EmergencyJob />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/history/:historyId" element={<HistoryDetail />} />
-          <Route path="/profile" element={<Profile />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ProjectProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/select-project" element={<ProjectSelection />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/unit/:unitId" element={<UnitDetail />} />
+            <Route path="/emergency" element={<EmergencyJob />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/history/:historyId" element={<HistoryDetail />} />
+            <Route path="/profile" element={<Profile />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ProjectProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
