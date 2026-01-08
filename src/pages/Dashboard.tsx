@@ -2,13 +2,20 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Leaf, MapPin, Layers, AlertTriangle, History, User, 
-  CheckCircle2, Target, Timer, LogOut, Clock
+  CheckCircle2, Target, Timer, LogOut, Clock, Building2, ChevronDown
 } from "lucide-react";
 import ListView from "@/components/ListView";
 import MapView from "@/components/MapView";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import SyncStatus from "@/components/SyncStatus";
 import { useCachedData } from "@/hooks/useOffline";
+import { useProject } from "@/contexts/ProjectContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Mock data
 const mockUser = {
@@ -81,6 +88,7 @@ type NavTab = "home" | "units" | "map" | "emergency" | "history";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { selectedProject, projects, setSelectedProject, isLoading: projectLoading } = useProject();
   const [viewMode, setViewMode] = useState<ViewMode>("home");
   const [activeNav, setActiveNav] = useState<NavTab>("home");
   const [mapboxToken, setMapboxToken] = useState<string>(() => {
@@ -88,7 +96,19 @@ const Dashboard = () => {
   });
   
   // Use cached data for offline support
-  const { data: mockUnits } = useCachedData('units', initialUnits);
+  const { data: allUnits } = useCachedData('units', initialUnits);
+  
+  // Filter units by selected project
+  const mockUnits = selectedProject 
+    ? allUnits.filter(unit => unit.project === selectedProject.name)
+    : allUnits;
+
+  // Redirect to project selection if no project is selected
+  useEffect(() => {
+    if (!projectLoading && !selectedProject) {
+      navigate("/select-project");
+    }
+  }, [projectLoading, selectedProject, navigate]);
 
   useEffect(() => {
     if (mapboxToken) {
@@ -111,6 +131,14 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
+  if (projectLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Offline Indicator */}
@@ -125,7 +153,30 @@ const Dashboard = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground">BerryTech</h1>
-              <p className="text-xs text-muted-foreground">{mockUser.crew}</p>
+              {/* Project Selector */}
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <Building2 className="w-3 h-3" />
+                  <span className="max-w-[120px] truncate">{selectedProject?.name || "Select Project"}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  {projects
+                    .filter((p) => p.status !== "completed")
+                    .map((project) => (
+                      <DropdownMenuItem
+                        key={project.id}
+                        onClick={() => setSelectedProject(project)}
+                        className={selectedProject?.id === project.id ? "bg-primary/10" : ""}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{project.name}</span>
+                          <span className="text-xs text-muted-foreground">{project.customer}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -155,6 +206,7 @@ const Dashboard = () => {
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground">Hi, {mockUser.name}</h2>
               <p className="text-muted-foreground">{mockUser.role} – {mockUser.crew}</p>
+              <p className="text-sm text-primary font-medium mt-1">{selectedProject?.name}</p>
             </div>
 
             {/* Quick Stats */}
