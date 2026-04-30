@@ -3,61 +3,69 @@ import { useState } from "react";
 import {
   Mic,
   Drill,
-  Tractor,
   Cable,
   Square,
-  Hash,
+  Radio,
   WifiOff,
   X,
   ChevronRight,
+  Home,
+  Map,
+  Layers,
+  Bell,
+  User,
 } from "lucide-react";
 import IPhoneFrame from "@/components/splice/IPhoneFrame";
-import SpliceTabBar from "@/components/splice/SpliceTabBar";
 
-type UnitStatus = "not_started" | "in_progress" | "complete" | "rejected";
-type UnitType = "bore" | "plow" | "aerial" | "handhole";
+type UnitStatus = "not_started" | "in_progress" | "complete";
+type UnitType = "bore" | "fiber" | "handhole" | "aerial";
 
 interface Unit {
   id: string;
   type: UnitType;
   typeLabel: string;
   status: UnitStatus;
-  sequential?: string;
-  detail: string;
 }
 
 const units: Unit[] = [
-  { id: "HH-047", type: "handhole", typeLabel: "Handhole", status: "in_progress", sequential: "SEQ-118", detail: "Maple St & 4th Ave" },
-  { id: "BR-203", type: "bore", typeLabel: "Bore (ft)", status: "not_started", detail: "320 ft · Riverside Rd" },
-  { id: "PL-088", type: "plow", typeLabel: "Plow (ft)", status: "complete", sequential: "SEQ-115", detail: "640 ft · Pine District" },
-  { id: "AE-021", type: "aerial", typeLabel: "Aerial Wire", status: "rejected", detail: "Pole 14 → Pole 19" },
-  { id: "BR-204", type: "bore", typeLabel: "Bore (ft)", status: "not_started", detail: "180 ft · Cedar Lane" },
-  { id: "HH-048", type: "handhole", typeLabel: "Handhole", status: "not_started", detail: "Oak & Main" },
-  { id: "PL-089", type: "plow", typeLabel: "Plow (ft)", status: "not_started", detail: "420 ft · Birch Way" },
+  { id: "HH-047", type: "handhole", typeLabel: "Handhole Installation", status: "in_progress" },
+  { id: "BR-203", type: "bore", typeLabel: "Directional Bore · 320 ft", status: "not_started" },
+  { id: "FB-118", type: "fiber", typeLabel: "Fiber Splice · 24-count", status: "complete" },
+  { id: "AE-021", type: "aerial", typeLabel: "Aerial Wire · Pole 14→19", status: "in_progress" },
+  { id: "HH-048", type: "handhole", typeLabel: "Handhole Installation", status: "not_started" },
+  { id: "BR-204", type: "bore", typeLabel: "Directional Bore · 180 ft", status: "complete" },
 ];
 
 const typeIcon: Record<UnitType, { Icon: typeof Drill; color: string; bg: string }> = {
-  bore: { Icon: Drill, color: "#1A56DB", bg: "#EFF4FE" },
-  plow: { Icon: Tractor, color: "#7C3AED", bg: "#F3EEFE" },
-  aerial: { Icon: Cable, color: "#B45309", bg: "#FEF6E7" },
-  handhole: { Icon: Square, color: "#057A55", bg: "#E8F6EE" },
+  bore: { Icon: Drill, color: "#1A56DB", bg: "#DBEAFE" },
+  fiber: { Icon: Cable, color: "#057A55", bg: "#D1FAE5" },
+  handhole: { Icon: Square, color: "#B45309", bg: "#FEF3C7" },
+  aerial: { Icon: Radio, color: "#7C3AED", bg: "#EDE9FE" },
 };
 
 const statusStyle: Record<UnitStatus, { label: string; bg: string; color: string }> = {
   not_started: { label: "Not Started", bg: "#F3F4F6", color: "#6B7280" },
-  in_progress: { label: "In Progress", bg: "#FEF6E7", color: "#B45309" },
-  complete: { label: "Complete", bg: "#E8F6EE", color: "#057A55" },
-  rejected: { label: "Rejected", bg: "#FDECEC", color: "#991B1B" },
+  in_progress: { label: "In Progress", bg: "#FEF3C7", color: "#B45309" },
+  complete: { label: "Complete", bg: "#D1FAE5", color: "#057A55" },
 };
+
+const tabs = [
+  { id: "home", label: "Home", Icon: Home, active: true },
+  { id: "map", label: "Map", Icon: Map },
+  { id: "units", label: "Units", Icon: Layers },
+  { id: "bell", label: "Alerts", Icon: Bell, path: "/splice/pulseflow" },
+  { id: "person", label: "Profile", Icon: User },
+];
 
 const TodaysUnits = () => {
   const navigate = useNavigate();
   const [offlineDismissed, setOfflineDismissed] = useState(false);
 
-  const completed = units.filter((u) => u.status === "complete").length;
+  const completed = 23;
   const total = 47;
-  const completedTotal = 23;
-  const pct = Math.round((completedTotal / total) * 100);
+  const inProgress = 6;
+  const remaining = total - completed - inProgress;
+  const pct = Math.round((completed / total) * 100);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -68,18 +76,21 @@ const TodaysUnits = () => {
   return (
     <IPhoneFrame>
       <div className="h-full flex flex-col bg-white">
-        {/* Scroll area */}
         <div className="flex-1 overflow-y-auto pb-[72px]">
           {/* Offline banner */}
           {!offlineDismissed && (
-            <div className="mx-4 mt-2 flex items-center gap-2 bg-[#FEF6E7] border border-[#F5D789] rounded-xl px-3 py-2">
+            <div
+              className="flex items-center gap-2 px-4 bg-[#FEF3C7]"
+              style={{ height: 44 }}
+            >
               <WifiOff className="w-4 h-4 text-[#B45309]" />
-              <p className="text-[13px] text-[#B45309] flex-1">
-                You're offline — showing cached units
+              <p className="text-[13px] text-[#B45309] flex-1 font-medium">
+                Offline — showing cached data
               </p>
               <button
                 onClick={() => setOfflineDismissed(true)}
-                className="w-8 h-8 flex items-center justify-center -mr-2"
+                className="w-11 h-11 -mr-3 flex items-center justify-center"
+                aria-label="Dismiss"
               >
                 <X className="w-4 h-4 text-[#B45309]" />
               </button>
@@ -87,37 +98,37 @@ const TodaysUnits = () => {
           )}
 
           {/* Header */}
-          <div className="px-4 pt-4 pb-3">
-            <h1 className="text-[24px] font-bold text-black leading-tight">
-              Good morning, Marcus.
+          <button className="w-full text-left px-4 pt-4 pb-3 active:bg-[#F9FAFB]">
+            <h1 className="text-[22px] font-bold text-[#111827] leading-tight">
+              Good morning, Marcus
             </h1>
-            <p className="text-[15px] text-[#6B7280] mt-0.5">{today}</p>
-          </div>
-
-          {/* Progress */}
-          <button className="w-full px-4 mb-4 text-left active:opacity-70">
-            <div className="flex items-baseline justify-between mb-2">
-              <p className="text-[15px] font-semibold text-black">
-                {completedTotal} of {total} units complete
-              </p>
-              <p className="text-[15px] font-semibold text-[#057A55]">{pct}%</p>
-            </div>
-            <div className="w-full h-3 bg-[#F3F4F6] rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${pct}%`, backgroundColor: "#057A55" }}
-              />
-            </div>
-            <p className="text-[13px] text-[#8E8E93] mt-1.5">Tap for breakdown by type</p>
+            <p className="text-[14px] text-[#6B7280] mt-0.5">{today}</p>
           </button>
 
-          {/* Section header */}
-          <div className="px-4 pt-2 pb-2 flex items-center justify-between">
-            <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[#6B7280]">
-              Today's Units
-            </h2>
-            <span className="text-[13px] text-[#8E8E93]">Pull to refresh</span>
+          {/* Progress card */}
+          <div className="mx-4 bg-white border border-[#E5E7EB] rounded-xl p-4">
+            <p className="text-[13px] text-[#6B7280]">Today's Progress</p>
+            <p className="text-[16px] font-bold text-[#111827] mt-0.5">
+              {completed} of {total} units complete
+            </p>
+            <div className="flex items-center gap-3 mt-3">
+              <div className="flex-1 h-3 bg-[#F3F4F6] rounded-md overflow-hidden">
+                <div
+                  className="h-full rounded-md"
+                  style={{ width: `${pct}%`, backgroundColor: "#10B981" }}
+                />
+              </div>
+              <span className="text-[14px] font-bold text-[#10B981]">{pct}%</span>
+            </div>
+            <p className="text-[12px] text-[#6B7280] mt-2">
+              {remaining} remaining · {inProgress} in progress
+            </p>
           </div>
+
+          {/* Section header */}
+          <h2 className="px-4 pt-5 pb-2 text-[13px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+            Assigned Units
+          </h2>
 
           {/* Unit list */}
           <div className="px-4 space-y-2.5">
@@ -129,28 +140,18 @@ const TodaysUnits = () => {
                 <button
                   key={u.id}
                   onClick={() => navigate(`/splice/unit/${u.id}`)}
-                  className="w-full bg-white border border-[#E5E7EB] rounded-2xl p-4 flex items-center gap-3 active:bg-[#F9FAFB]"
+                  className="w-full bg-white border border-[#E5E7EB] rounded-xl p-4 flex items-center gap-4 active:bg-[#F9FAFB]"
                   style={{ minHeight: 72 }}
                 >
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: t.bg }}
                   >
                     <Icon className="w-5 h-5" style={{ color: t.color }} />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center gap-2">
-                      <p className="text-[16px] font-bold text-black">{u.id}</p>
-                      {u.sequential && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-[#EFF4FE] text-[#1A56DB] text-[11px] font-semibold">
-                          <Hash className="w-2.5 h-2.5" />
-                          {u.sequential}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[13px] text-[#6B7280] truncate">
-                      {u.typeLabel} · {u.detail}
-                    </p>
+                    <p className="text-[15px] font-bold text-[#111827]">{u.id}</p>
+                    <p className="text-[13px] text-[#6B7280] truncate">{u.typeLabel}</p>
                   </div>
                   <span
                     className="px-2.5 py-1 rounded-full text-[12px] font-semibold flex-shrink-0"
@@ -158,27 +159,58 @@ const TodaysUnits = () => {
                   >
                     {s.label}
                   </span>
-                  <ChevronRight className="w-4 h-4 text-[#C7C7CC] flex-shrink-0 -ml-1" />
                 </button>
               );
             })}
-            <p className="text-center text-[12px] text-[#8E8E93] py-4">
-              Showing 7 of {total} · scroll for more
-            </p>
           </div>
         </div>
 
-        {/* Floating FieldVoice button */}
+        {/* Floating mic FAB */}
         <button
           onClick={() => navigate("/splice/fieldvoice")}
-          className="absolute right-6 bg-[#1A56DB] rounded-full flex items-center justify-center active:scale-95 transition-transform"
-          style={{ width: 64, height: 64, bottom: 80 }}
+          className="absolute rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          style={{
+            width: 72,
+            height: 72,
+            right: 20,
+            bottom: 80,
+            backgroundColor: "#1A56DB",
+            border: "1px solid #1E40AF",
+          }}
           aria-label="FieldVoice"
         >
           <Mic className="w-7 h-7 text-white" strokeWidth={2.5} />
         </button>
 
-        <SpliceTabBar />
+        {/* Bottom Tab Bar */}
+        <div
+          className="absolute bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] flex items-end justify-around px-1 pb-[6px] pt-1"
+          style={{ height: 56 }}
+        >
+          {tabs.map((tab) => {
+            const Icon = tab.Icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => tab.path && navigate(tab.path)}
+                className="flex flex-col items-center justify-end gap-[2px] flex-1 h-full"
+                style={{ minHeight: 44 }}
+              >
+                <Icon
+                  className="w-[22px] h-[22px]"
+                  style={{ color: tab.active ? "#1A56DB" : "#8E8E93" }}
+                  strokeWidth={tab.active ? 2.5 : 2}
+                />
+                <span
+                  className="text-[10px] font-semibold"
+                  style={{ color: tab.active ? "#1A56DB" : "#8E8E93" }}
+                >
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </IPhoneFrame>
   );
