@@ -13,6 +13,12 @@ import EmergencyJob from "./pages/EmergencyJob";
 import History from "./pages/History";
 import HistoryDetail from "./pages/HistoryDetail";
 import Profile from "./pages/Profile";
+import SpliceIndex from "./pages/splice/SpliceIndex";
+import SpliceTodaysUnits from "./pages/splice/TodaysUnits";
+import SpliceUnitDetail from "./pages/splice/UnitDetail";
+import SpliceFieldVoice from "./pages/splice/FieldVoice";
+import SpliceEmergency from "./pages/splice/EmergencyJob";
+import SplicePulseFlow from "./pages/splice/PulseFlow";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +40,12 @@ const App = () => (
             <Route path="/history" element={<History />} />
             <Route path="/history/:historyId" element={<HistoryDetail />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/splice" element={<SpliceIndex />} />
+            <Route path="/splice/today" element={<SpliceTodaysUnits />} />
+            <Route path="/splice/unit/:unitId" element={<SpliceUnitDetail />} />
+            <Route path="/splice/fieldvoice" element={<SpliceFieldVoice />} />
+            <Route path="/splice/emergency" element={<SpliceEmergency />} />
+            <Route path="/splice/pulseflow" element={<SplicePulseFlow />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
